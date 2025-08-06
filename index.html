@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Upload Image from URL</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-color: #4F46E5; --primary-hover: #4338CA; --success-color: #10B981;
+      --error-color: #EF4444; --bg-light: #f8f9fa; --bg-white: #ffffff;
+      --border-color: #e5e7eb; --text-dark: #111827; --text-light: #6B7281;
+      --font-family: 'Inter', sans-serif;
+    }
+    body {
+      font-family: var(--font-family); background: var(--bg-light); color: var(--text-dark);
+      display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px;
+    }
+    .container {
+      background: var(--bg-white); padding: 32px; border-radius: 20px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.07); width: 100%; max-width: 550px; text-align: center;
+    }
+    h2 { font-size: 24px; font-weight: 700; margin-bottom: 12px; }
+    .subtitle { color: var(--text-light); margin-bottom: 28px; }
+    .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
+    #imageUrlInput {
+      flex-grow: 1; padding: 14px; font-size: 16px; border: 1px solid var(--border-color);
+      border-radius: 10px; transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    #imageUrlInput:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); outline: none; }
+    .upload-btn {
+      background: var(--primary-color); color: white; border: none; padding: 14px 20px;
+      font-size: 16px; font-weight: 600; border-radius: 10px; cursor: pointer;
+      transition: background-color 0.3s, box-shadow 0.3s, transform 0.2s;
+    }
+    .upload-btn:hover { background-color: var(--primary-hover); box-shadow: 0 4px 15px rgba(79, 70, 229, 0.2); transform: translateY(-2px); }
+    .upload-btn:disabled { background-color: #9ca3af; cursor: not-allowed; box-shadow: none; transform: none; }
+    .loader { display: none; margin: 20px auto; width: 40px; height: 40px; border: 4px solid var(--border-color); border-top-color: var(--primary-color); border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .output { margin-top: 24px; text-align: left; }
+    .output-header { font-weight: 600; margin-bottom: 8px; color: var(--text-dark); }
+    .copy-group { display: flex; gap: 10px; margin-top: 8px; }
+    .copy-group input { flex: 1; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 14px; background-color: var(--bg-light); font-family: 'Menlo', 'Courier New', monospace; }
+    .copy-btn { padding: 10px 14px; font-size: 14px; font-weight: 500; background-color: var(--success-color); color: #fff; border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.3s; }
+    .copy-btn:hover { background-color: #059669; }
+    img.uploaded-preview { margin-top: 16px; width: 100%; max-width: 100%; border-radius: 12px; border: 1px solid var(--border-color); }
+    #error-message { color: var(--error-color); margin-top: 15px; font-weight: 500; display: none; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>🔗 Upload Image from URL</h2>
+  <p class="subtitle">Paste an image URL below to upload it to ImgBB.</p>
+  
+  <div class="input-group">
+    <input type="url" id="imageUrlInput" placeholder="https://example.com/image.jpg" required>
+    <button class="upload-btn" id="uploadBtn">Upload</button>
+  </div>
+  
+  <div class="loader" id="loader"></div>
+  <p id="error-message"></p>
+  <div class="output" id="output"></div>
+</div>
+
+<script>
+  const imageUrlInput = document.getElementById('imageUrlInput');
+  const uploadBtn = document.getElementById('uploadBtn');
+  const loader = document.getElementById('loader');
+  const output = document.getElementById('output');
+  const errorMessage = document.getElementById('error-message');
+
+  uploadBtn.addEventListener('click', async () => {
+    const imageUrl = imageUrlInput.value.trim();
+    if (!imageUrl) {
+      showError('Please paste an image URL.');
+      return;
+    }
+
+    // Reset UI
+    uploadBtn.disabled = true;
+    uploadBtn.textContent = 'Uploading...';
+    loader.style.display = 'block';
+    output.innerHTML = '';
+    errorMessage.style.display = 'none';
+
+    try {
+      // Send the URL to our backend serverless function
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ imageUrl: imageUrl }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        displaySuccess(result.url);
+      } else {
+        showError(result.error || 'Failed to upload image.');
+      }
+
+    } catch (err) {
+      showError('An error occurred. Check the console for details.');
+      console.error(err);
+    } finally {
+      uploadBtn.disabled = false;
+      uploadBtn.textContent = 'Upload';
+      loader.style.display = 'none';
+    }
+  });
+
+  function displaySuccess(newUrl) {
+    output.innerHTML = `
+      <p class="output-header">✅ Success! Here is your new direct link:</p>
+      <div class="copy-group">
+        <input type="text" value="${newUrl}" id="imageLink" readonly>
+        <button class="copy-btn" onclick="copyLink()">Copy</button>
+      </div>
+      <img src="${newUrl}" class="uploaded-preview" alt="Uploaded Image">
+    `;
+  }
+  
+  function showError(message) {
+    errorMessage.textContent = message;
+    errorMessage.style.display = 'block';
+  }
+
+  function copyLink() {
+    const copyText = document.getElementById("imageLink");
+    navigator.clipboard.writeText(copyText.value).then(() => {
+        alert('Link copied to clipboard!');
+    });
+  }
+</script>
+
+</body>
+</html>
