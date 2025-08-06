@@ -2,6 +2,7 @@
   "name": "url-uploader",
   "version": "1.0.0",
   "private": true,
+  "type": "module",  <-- এই লাইনটি যোগ করুন
   "dependencies": {
     "form-data": "^4.0.0",
     "node-fetch": "^3.3.2"
