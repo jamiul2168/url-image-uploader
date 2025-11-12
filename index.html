@@ -7,53 +7,160 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --primary-color: #4F46E5; --primary-hover: #4338CA; --success-color: #10B981;
-      --error-color: #EF4444; --bg-light: #f8f9fa; --bg-white: #ffffff;
-      --border-color: #e5e7eb; --text-dark: #111827; --text-light: #6B7281;
-      --font-family: 'Inter', sans-serif;
-    }
-    body {
-      font-family: var(--font-family); background: var(--bg-light); color: var(--text-dark);
-      display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 40px 20px;
-    }
-    .container {
+  --primary-color: #6366f1;
+  --primary-hover: #4f46e5;
+  --success-color: #10b981;
+  --error-color: #ef4444;
+  --bg-light: #0f172a;
+  --bg-white: #1e293b;
+  --border-color: #334155;
+  --text-dark: #f1f5f9;
+  --text-light: #94a3b8;
+  --font-family: 'Inter', sans-serif;
+}
+
+body {
+  font-family: var(--font-family);
+  background: var(--bg-light);
+  color: var(--text-dark);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 40px 20px;
+}
+
+.container {
   background: var(--bg-white);
   padding: 32px;
   border-radius: 20px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.07);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
   width: 100%;
   max-width: 800px;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
-    h2 { font-size: 24px; font-weight: 700; margin-bottom: 12px; }
-    .subtitle { color: var(--text-light); margin-bottom: 28px; }
-    #urlsInput {
-      width: 100%; padding: 14px; font-size: 16px; border: 1px solid var(--border-color);
-      border-radius: 10px; resize: vertical; min-height: 150px; margin-bottom: 20px;
-      font-family: 'Menlo', 'Courier New', monospace; line-height: 1.6;
-    }
-    #urlsInput:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); outline: none; }
-    .upload-btn {
-      background: var(--primary-color); color: white; border: none; padding: 14px 28px;
-      font-size: 16px; font-weight: 600; border-radius: 10px; cursor: pointer;
-      transition: background-color 0.3s, box-shadow 0.3s, transform 0.2s;
-    }
-    .upload-btn:hover { background-color: var(--primary-hover); }
-    .upload-btn:disabled { background-color: #9ca3af; cursor: not-allowed; }
-    
-    #progress-status { margin-top: 20px; font-weight: 500; color: var(--text-light); height: 24px; }
-    
-    .output { margin-top: 10px; text-align: left; max-height: 400px; overflow-y: auto; }
-    .results-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    .results-table th, .results-table td { padding: 12px; border-bottom: 1px solid var(--border-color); text-align: left; word-break: break-all; }
-    .results-table th { background-color: var(--bg-light); font-weight: 600; }
-    .status-success { color: var(--success-color); font-weight: 600; }
-    .status-failed { color: var(--error-color); font-weight: 600; }
-    .output-actions { margin-top: 20px; text-align: right; }
-    .copy-all-btn { background-color: var(--success-color); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 500; cursor: pointer; }
-    .copy-all-btn:disabled { background-color: #9ca3af; }
+
+h2 {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: var(--text-dark);
+}
+
+.subtitle {
+  color: var(--text-light);
+  margin-bottom: 28px;
+}
+
+#urlsInput {
+  width: 100%;
+  padding: 14px;
+  font-size: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  resize: vertical;
+  min-height: 150px;
+  margin-bottom: 20px;
+  font-family: 'Menlo', 'Courier New', monospace;
+  line-height: 1.6;
+  background: #1e293b;
+  color: var(--text-dark);
+}
+
+#urlsInput:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  outline: none;
+}
+
+.upload-btn {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 14px 28px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 0.3s, box-shadow 0.3s, transform 0.2s;
+}
+
+.upload-btn:hover {
+  background-color: var(--primary-hover);
+}
+
+.upload-btn:disabled {
+  background-color: #4b5563;
+  cursor: not-allowed;
+}
+
+#progress-status {
+  margin-top: 20px;
+  font-weight: 500;
+  color: var(--text-light);
+  height: 24px;
+}
+
+.output {
+  margin-top: 10px;
+  text-align: left;
+  max-height: 400px;
+  overflow-y: auto;
+  width: 100%;
+}
+
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  background: #1e293b;
+}
+
+.results-table th,
+.results-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border-color);
+  text-align: left;
+  word-break: break-all;
+  color: var(--text-dark);
+}
+
+.results-table th {
+  background-color: #0f172a;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.status-success {
+  color: var(--success-color);
+  font-weight: 600;
+}
+
+.status-failed {
+  color: var(--error-color);
+  font-weight: 600;
+}
+
+.output-actions {
+  margin-top: 20px;
+  text-align: right;
+}
+
+.copy-all-btn {
+  background-color: var(--success-color);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.copy-all-btn:disabled {
+  background-color: #4b5563;
+}
   </style>
 </head>
 <body>
@@ -160,5 +267,6 @@
 
 </body>
 </html>
+
 
 
