@@ -1,47 +1,27 @@
 <!DOCTYPE html>
 <html lang="bn">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Google Drive Folder Thumbnail Generator</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <title>Image URL → Google Drive</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
-      font-family: Inter, sans-serif;
+      font-family: Arial, sans-serif;
       background: #f3f4f6;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      padding: 20px;
-    }
-    .container {
-      background: #fff;
       padding: 30px;
-      border-radius: 16px;
-      width: 100%;
-      max-width: 700px;
-      box-shadow: 0 10px 30px rgba(0,0,0,.08);
     }
-    h2 { margin-bottom: 10px; }
-    input {
+    textarea {
       width: 100%;
-      padding: 14px;
-      font-size: 16px;
-      border-radius: 10px;
-      border: 1px solid #ddd;
-      margin-bottom: 15px;
+      height: 160px;
+      padding: 12px;
+      font-size: 14px;
     }
     button {
-      padding: 14px 24px;
-      font-size: 16px;
-      background: #4f46e5;
-      color: #fff;
-      border: none;
-      border-radius: 10px;
+      margin-top: 10px;
+      padding: 12px 20px;
+      font-size: 15px;
       cursor: pointer;
     }
-    button:disabled { background: #9ca3af; }
     table {
       width: 100%;
       margin-top: 20px;
@@ -49,76 +29,64 @@
       font-size: 14px;
     }
     th, td {
-      padding: 10px;
-      border-bottom: 1px solid #eee;
+      border: 1px solid #ddd;
+      padding: 8px;
       word-break: break-all;
     }
-    th { background: #f9fafb; }
+    th {
+      background: #eee;
+    }
   </style>
 </head>
 <body>
 
-<div class="container">
-  <h2>📂 Drive Folder Thumbnail Generator</h2>
-  <p>Paste Google Drive <b>Folder ID</b> below</p>
+<h2>🖼 Image URL → Google Drive Uploader</h2>
 
-  <input id="folderId" placeholder="17wBBbcrvMp2Vpnrpq6AKuS_uOYwN5Gmz" />
-  <button id="loadBtn">Get Thumbnails</button>
+<textarea id="urls" placeholder="এক লাইনে একটি image URL দিন"></textarea>
+<br>
+<button onclick="upload()">Upload Images</button>
 
-  <div id="output"></div>
-</div>
+<div id="output"></div>
 
 <script>
-const btn = document.getElementById('loadBtn');
-const output = document.getElementById('output');
+async function upload() {
+  const urls = document.getElementById("urls").value
+    .split("\n")
+    .map(u => u.trim())
+    .filter(Boolean);
 
-btn.onclick = async () => {
-  const folderId = document.getElementById('folderId').value.trim();
-  if (!folderId) return alert("Folder ID required");
+  if (urls.length === 0) {
+    alert("Image URL দিন");
+    return;
+  }
 
-  btn.disabled = true;
-  btn.textContent = "Loading...";
-
-  output.innerHTML = "";
-
-  const res = await fetch('/api/upload', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ folderId })
+  const res = await fetch("/api/upload", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ urls })
   });
 
   const data = await res.json();
 
-  if (!data.success) {
-    output.innerHTML = `<p style="color:red">${data.error}</p>`;
-    btn.disabled = false;
-    btn.textContent = "Get Thumbnails";
-    return;
-  }
+  let html = `<table>
+    <tr>
+      <th>Original URL</th>
+      <th>Status</th>
+      <th>Google Drive Link</th>
+    </tr>`;
 
-  let html = `
-    <table>
-      <tr>
-        <th>File Name</th>
-        <th>Thumbnail Link</th>
-      </tr>
-  `;
-
-  data.files.forEach(f => {
+  data.results.forEach(r => {
     html += `
       <tr>
-        <td>${f.name}</td>
-        <td><a href="${f.thumbnail}" target="_blank">${f.thumbnail}</a></td>
-      </tr>
-    `;
+        <td>${r.original}</td>
+        <td>${r.success ? "✅ Success" : "❌ Failed"}</td>
+        <td>${r.driveLink ? `<a href="${r.driveLink}" target="_blank">Open</a>` : r.error}</td>
+      </tr>`;
   });
 
   html += "</table>";
-  output.innerHTML = html;
-
-  btn.disabled = false;
-  btn.textContent = "Get Thumbnails";
-};
+  document.getElementById("output").innerHTML = html;
+}
 </script>
 
 </body>
