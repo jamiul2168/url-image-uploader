@@ -1,9 +1,9 @@
 {
-  "name": "drive-thumbnail-generator",
+  "name": "url-image-to-drive",
   "version": "1.0.0",
-  "private": true,
   "type": "module",
   "dependencies": {
-    "googleapis": "^140.0.0"
+    "googleapis": "^140.0.0",
+    "node-fetch": "^3.3.2"
   }
 }
