@@ -3,164 +3,123 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Bulk Image Uploader from URL</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <title>Google Drive Folder Thumbnail Generator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --primary-color: #4F46E5; --primary-hover: #4338CA; --success-color: #10B981;
-      --error-color: #EF4444; --bg-light: #f8f9fa; --bg-white: #ffffff;
-      --border-color: #e5e7eb; --text-dark: #111827; --text-light: #6B7281;
-      --font-family: 'Inter', sans-serif;
-    }
     body {
-      font-family: var(--font-family); background: var(--bg-light); color: var(--text-dark);
-      display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 40px 20px;
+      font-family: Inter, sans-serif;
+      background: #f3f4f6;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
     }
     .container {
-  background: var(--bg-white);
-  padding: 32px;
-  border-radius: 20px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.07);
-  width: 100%;
-  max-width: 800px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-    h2 { font-size: 24px; font-weight: 700; margin-bottom: 12px; }
-    .subtitle { color: var(--text-light); margin-bottom: 28px; }
-    #urlsInput {
-      width: 100%; padding: 14px; font-size: 16px; border: 1px solid var(--border-color);
-      border-radius: 10px; resize: vertical; min-height: 150px; margin-bottom: 20px;
-      font-family: 'Menlo', 'Courier New', monospace; line-height: 1.6;
+      background: #fff;
+      padding: 30px;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 700px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.08);
     }
-    #urlsInput:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); outline: none; }
-    .upload-btn {
-      background: var(--primary-color); color: white; border: none; padding: 14px 28px;
-      font-size: 16px; font-weight: 600; border-radius: 10px; cursor: pointer;
-      transition: background-color 0.3s, box-shadow 0.3s, transform 0.2s;
+    h2 { margin-bottom: 10px; }
+    input {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      border-radius: 10px;
+      border: 1px solid #ddd;
+      margin-bottom: 15px;
     }
-    .upload-btn:hover { background-color: var(--primary-hover); }
-    .upload-btn:disabled { background-color: #9ca3af; cursor: not-allowed; }
-    
-    #progress-status { margin-top: 20px; font-weight: 500; color: var(--text-light); height: 24px; }
-    
-    .output { margin-top: 10px; text-align: left; max-height: 400px; overflow-y: auto; }
-    .results-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    .results-table th, .results-table td { padding: 12px; border-bottom: 1px solid var(--border-color); text-align: left; word-break: break-all; }
-    .results-table th { background-color: var(--bg-light); font-weight: 600; }
-    .status-success { color: var(--success-color); font-weight: 600; }
-    .status-failed { color: var(--error-color); font-weight: 600; }
-    .output-actions { margin-top: 20px; text-align: right; }
-    .copy-all-btn { background-color: var(--success-color); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 500; cursor: pointer; }
-    .copy-all-btn:disabled { background-color: #9ca3af; }
+    button {
+      padding: 14px 24px;
+      font-size: 16px;
+      background: #4f46e5;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    button:disabled { background: #9ca3af; }
+    table {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+      word-break: break-all;
+    }
+    th { background: #f9fafb; }
   </style>
 </head>
 <body>
 
 <div class="container">
-  <h2>🔗 Bulk Image Uploader from URLs</h2>
-  <p class="subtitle">Paste multiple image URLs below (one per line) and upload them all at once.</p>
-  
-  <textarea id="urlsInput" placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.png&#10;https://example.com/image3.gif"></textarea>
-  <button class="upload-btn" id="uploadBtn">Upload All</button>
-  
-  <div id="progress-status"></div>
-  <div class="output" id="output"></div>
+  <h2>📂 Drive Folder Thumbnail Generator</h2>
+  <p>Paste Google Drive <b>Folder ID</b> below</p>
+
+  <input id="folderId" placeholder="17wBBbcrvMp2Vpnrpq6AKuS_uOYwN5Gmz" />
+  <button id="loadBtn">Get Thumbnails</button>
+
+  <div id="output"></div>
 </div>
 
 <script>
-  const urlsInput = document.getElementById('urlsInput');
-  const uploadBtn = document.getElementById('uploadBtn');
-  const progressStatus = document.getElementById('progress-status');
-  const output = document.getElementById('output');
+const btn = document.getElementById('loadBtn');
+const output = document.getElementById('output');
 
-  uploadBtn.addEventListener('click', async () => {
-    const urls = urlsInput.value.split('\n').map(url => url.trim()).filter(url => url.length > 0 && url.startsWith('http'));
+btn.onclick = async () => {
+  const folderId = document.getElementById('folderId').value.trim();
+  if (!folderId) return alert("Folder ID required");
 
-    if (urls.length === 0) {
-      alert('Please paste valid image URLs, one per line.');
-      return;
-    }
+  btn.disabled = true;
+  btn.textContent = "Loading...";
 
-    // Reset UI
-    uploadBtn.disabled = true;
-    uploadBtn.textContent = 'Uploading...';
-    output.innerHTML = '';
-    
-    let completed = 0;
-    progressStatus.textContent = `Uploading 0 of ${urls.length}...`;
+  output.innerHTML = "";
 
-    // Create results table
-    output.innerHTML = `
-        <table class="results-table">
-            <thead>
-                <tr>
-                    <th>Original URL</th>
-                    <th>Status</th>
-                    <th>New ImgBB Link</th>
-                </tr>
-            </thead>
-            <tbody id="results-body"></tbody>
-        </table>
-        <div class="output-actions" id="output-actions"></div>`;
-    const resultsBody = document.getElementById('results-body');
-
-    const uploadPromises = urls.map(url => {
-        return fetch('/api/upload', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ imageUrl: url }),
-        })
-        .then(response => response.json().then(data => ({ ok: response.ok, data, originalUrl: url })))
-        .catch(err => ({ ok: false, data: { error: 'Network or client error' }, originalUrl: url }));
-    });
-    
-    for (const promise of uploadPromises) {
-        const result = await promise;
-        completed++;
-        progressStatus.textContent = `Uploading ${completed} of ${urls.length}...`;
-
-        const row = resultsBody.insertRow();
-        const cell1 = row.insertCell(0);
-        const cell2 = row.insertCell(1);
-        const cell3 = row.insertCell(2);
-
-        cell1.textContent = result.originalUrl;
-        
-        if (result.ok && result.data.url) {
-            cell2.innerHTML = `<span class="status-success">Success</span>`;
-            cell3.innerHTML = `<a href="${result.data.url}" target="_blank">${result.data.url}</a>`;
-        } else {
-            cell2.innerHTML = `<span class="status-failed">Failed</span>`;
-            cell3.textContent = result.data.error || 'Unknown error';
-        }
-    }
-
-    progressStatus.textContent = `Upload complete! ${completed} of ${urls.length} processed.`;
-    uploadBtn.disabled = false;
-    uploadBtn.textContent = 'Upload All';
-    
-    // Add "Copy All" button if there are successful uploads
-    const successfulLinks = Array.from(resultsBody.querySelectorAll('a')).map(a => a.href);
-    if (successfulLinks.length > 0) {
-        const outputActions = document.getElementById('output-actions');
-        const copyBtn = document.createElement('button');
-        copyBtn.textContent = `Copy All ${successfulLinks.length} Successful Links`;
-        copyBtn.className = 'copy-all-btn';
-        copyBtn.onclick = () => {
-            navigator.clipboard.writeText(successfulLinks.join('\n'));
-            copyBtn.textContent = 'Copied!';
-            setTimeout(() => { copyBtn.textContent = `Copy All ${successfulLinks.length} Successful Links`; }, 2000);
-        };
-        outputActions.appendChild(copyBtn);
-    }
+  const res = await fetch('/api/upload', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ folderId })
   });
+
+  const data = await res.json();
+
+  if (!data.success) {
+    output.innerHTML = `<p style="color:red">${data.error}</p>`;
+    btn.disabled = false;
+    btn.textContent = "Get Thumbnails";
+    return;
+  }
+
+  let html = `
+    <table>
+      <tr>
+        <th>File Name</th>
+        <th>Thumbnail Link</th>
+      </tr>
+  `;
+
+  data.files.forEach(f => {
+    html += `
+      <tr>
+        <td>${f.name}</td>
+        <td><a href="${f.thumbnail}" target="_blank">${f.thumbnail}</a></td>
+      </tr>
+    `;
+  });
+
+  html += "</table>";
+  output.innerHTML = html;
+
+  btn.disabled = false;
+  btn.textContent = "Get Thumbnails";
+};
 </script>
 
 </body>
 </html>
-
-
-
-
