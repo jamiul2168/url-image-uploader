@@ -1,5 +1,6 @@
 import fetch from "node-fetch";
 import { google } from "googleapis";
+import { Readable } from "stream";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -26,7 +27,7 @@ export default async function handler(req, res) {
 
     for (const url of urls) {
       try {
-        // only image check
+        // ✅ image only check
         if (!url.match(/\.(jpg|jpeg|png|gif|webp)(\?|$)/i)) {
           throw new Error("Not an image URL");
         }
@@ -34,7 +35,9 @@ export default async function handler(req, res) {
         const imgRes = await fetch(url);
         if (!imgRes.ok) throw new Error("Failed to fetch image");
 
-        const buffer = await imgRes.buffer();
+        const buffer = await imgRes.arrayBuffer();
+        const stream = Readable.from(Buffer.from(buffer));
+
         const ext = url.split(".").pop().split("?")[0];
         const fileName = `img_${Date.now()}.${ext}`;
 
@@ -44,8 +47,8 @@ export default async function handler(req, res) {
             parents: [folderId]
           },
           media: {
-            mimeType: imgRes.headers.get("content-type"),
-            body: buffer
+            mimeType: imgRes.headers.get("content-type") || "image/jpeg",
+            body: stream
           }
         });
 
