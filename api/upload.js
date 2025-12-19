@@ -1,56 +1,75 @@
-// File: /api/upload.js
-import fetch from 'node-fetch';
-import FormData from 'form-data';
+import fetch from "node-fetch";
+import { google } from "googleapis";
 
-export default async function handler(request, response) {
-  // Only allow POST requests
-  if (request.method !== 'POST') {
-    return response.status(405).json({ error: 'Method Not Allowed' });
+export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method Not Allowed" });
   }
 
-  // Get the image URL from the request body
-  const { imageUrl } = request.body;
-
-  if (!imageUrl) {
-    return response.status(400).json({ error: 'Image URL is required' });
+  const { urls } = req.body;
+  if (!Array.isArray(urls) || urls.length === 0) {
+    return res.status(400).json({ error: "urls array required" });
   }
 
-  // Get the API key from environment variables for security
-  const apiKey = process.env.IMGBB_API_KEY;
-  if (!apiKey) {
-    return response.status(500).json({ error: 'Server configuration error: API key not set' });
-  }
-  
   try {
-    // Step 1: Fetch the image from the provided URL
-    const imageResponse = await fetch(imageUrl);
-    if (!imageResponse.ok) {
-      throw new Error(`Failed to fetch image. Status: ${imageResponse.status}`);
+    const auth = new google.auth.JWT(
+      process.env.GOOGLE_CLIENT_EMAIL,
+      null,
+      process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"),
+      ["https://www.googleapis.com/auth/drive"]
+    );
+
+    const drive = google.drive({ version: "v3", auth });
+    const folderId = process.env.DRIVE_FOLDER_ID;
+
+    const results = [];
+
+    for (const url of urls) {
+      try {
+        // only image check
+        if (!url.match(/\.(jpg|jpeg|png|gif|webp)(\?|$)/i)) {
+          throw new Error("Not an image URL");
+        }
+
+        const imgRes = await fetch(url);
+        if (!imgRes.ok) throw new Error("Failed to fetch image");
+
+        const buffer = await imgRes.buffer();
+        const ext = url.split(".").pop().split("?")[0];
+        const fileName = `img_${Date.now()}.${ext}`;
+
+        const file = await drive.files.create({
+          requestBody: {
+            name: fileName,
+            parents: [folderId]
+          },
+          media: {
+            mimeType: imgRes.headers.get("content-type"),
+            body: buffer
+          }
+        });
+
+        const fileId = file.data.id;
+        const driveLink = `https://drive.google.com/file/d/${fileId}/view`;
+
+        results.push({
+          original: url,
+          success: true,
+          driveLink
+        });
+
+      } catch (err) {
+        results.push({
+          original: url,
+          success: false,
+          error: err.message
+        });
+      }
     }
-    const imageBuffer = await imageResponse.buffer();
-    
-    // Step 2: Prepare form data to send to ImgBB
-    const form = new FormData();
-    // Convert buffer to base64 string for the API
-    form.append('image', imageBuffer.toString('base64'));
 
-    // Step 3: Upload the image to ImgBB
-    const imgbbResponse = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
-      method: 'POST',
-      body: form,
-    });
-    
-    const imgbbResult = await imgbbResponse.json();
+    res.status(200).json({ results });
 
-    if (!imgbbResult.success) {
-      throw new Error(imgbbResult.error?.message || 'ImgBB API error');
-    }
-
-    // Step 4: Send the new URL back to the frontend
-    return response.status(200).json({ url: imgbbResult.data.url });
-
-  } catch (error) {
-    console.error('Upload process failed:', error);
-    return response.status(500).json({ error: error.message });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 }
